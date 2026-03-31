@@ -42,15 +42,11 @@ final class APIClient: APIClientProtocol {
     // MARK: - Private
 
     private func execute<T: Decodable>(request: URLRequest, isRetry: Bool) async throws -> T {
-        print("🌐 Request URL: \(request.url?.absoluteString ?? "nil")")
         let (data, response) = try await fetchData(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw NetworkError.unknown(URLError(.badServerResponse))
         }
-        
-        print("📡 Status Code: \(httpResponse.statusCode)")
-        print("📦 Response: \(String(data: data, encoding: .utf8) ?? "nil")")
 
         switch httpResponse.statusCode {
         case 200..<300:
