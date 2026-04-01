@@ -25,9 +25,6 @@ struct PayQuickApp: App {
 }
 
 // MARK: - AppContainerWrapper
-//
-// Wraps AppContainer in an ObservableObject so @StateObject can own it.
-
 @MainActor
 private final class AppContainerWrapper: ObservableObject {
     let instance: AppContainer

@@ -8,13 +8,11 @@
 import Foundation
 
 // MARK: - APIClientProtocol
-
 protocol APIClientProtocol {
     func perform<T: Decodable>(_ endpoint: any Endpoint) async throws -> T
 }
 
 // MARK: - APIClient
-
 final class APIClient: APIClientProtocol {
 
     private let session: URLSession
@@ -33,14 +31,12 @@ final class APIClient: APIClientProtocol {
     }
 
     // MARK: - Core Request
-
     func perform<T: Decodable>(_ endpoint: any Endpoint) async throws -> T {
         let request = try endpoint.makeURLRequest()
         return try await execute(request: request, isRetry: false)
     }
 
     // MARK: - Private
-
     private func execute<T: Decodable>(request: URLRequest, isRetry: Bool) async throws -> T {
         let (data, response) = try await fetchData(for: request)
 
@@ -88,7 +84,6 @@ final class APIClient: APIClientProtocol {
 }
 
 // MARK: - Supporting Types
-
 private struct APIErrorResponse: Decodable {
     let message: String?
 }

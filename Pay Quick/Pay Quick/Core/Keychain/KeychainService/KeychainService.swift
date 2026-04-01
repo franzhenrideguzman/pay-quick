@@ -16,7 +16,6 @@ protocol KeychainServiceProtocol {
 }
 
 // MARK: - KeychainService
-
 final class KeychainService: KeychainServiceProtocol {
 
     // MARK: Keys

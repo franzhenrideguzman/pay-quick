@@ -9,7 +9,6 @@ import Foundation
 import Combine
 
 // MARK: - TransactionSection
-
 struct TransactionSection: Identifiable {
     let id: String
     let title: String
@@ -17,7 +16,6 @@ struct TransactionSection: Identifiable {
 }
 
 // MARK: - TransactionListViewState
-
 struct TransactionListViewState {
     var sections: [TransactionSection] = []
     var isLoadingFirstPage: Bool = false
@@ -31,7 +29,6 @@ struct TransactionListViewState {
 }
 
 // MARK: - TransactionListViewModel
-
 @MainActor
 final class TransactionListViewModel: ObservableObject {
 
@@ -53,7 +50,6 @@ final class TransactionListViewModel: ObservableObject {
     }
 
     // MARK: - Intents
-
     func onAppear() {
         guard allTransactions.isEmpty else { return }
         loadFirstPage()

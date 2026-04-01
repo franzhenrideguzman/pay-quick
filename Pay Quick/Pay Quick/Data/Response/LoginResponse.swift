@@ -26,7 +26,6 @@ struct LoginResponse: Decodable {
 }
 
 // MARK: - Mapping to Domain
-
 extension LoginResponse {
     func toDomain() -> (user: User, accessToken: String, refreshToken: String) {
         let user = User(

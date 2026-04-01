@@ -15,7 +15,6 @@ final class AppContainer {
     let apiClient: APIClientProtocol
     let appSession: AppSession
 
-    // MARK: - Init
     init() {
         let keychain = KeychainService()
         self.keychain = keychain
@@ -34,8 +33,6 @@ final class AppContainer {
 
         self.apiClient = APIClient(refreshInterceptor: interceptor)
     }
-
-    // MARK: - Factory Methods
 
     func makeLoginViewModel() -> LoginViewModel {
         LoginViewModel(

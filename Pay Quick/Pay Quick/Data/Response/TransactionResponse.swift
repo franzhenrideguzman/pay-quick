@@ -32,7 +32,6 @@ struct TransactionResponse: Decodable {
 }
 
 // MARK: - Mapping to Domain
-
 extension TransactionResponse {
     func toDomain() -> PaginatedTransactions {
         let transactions = data.map { item -> Transaction in

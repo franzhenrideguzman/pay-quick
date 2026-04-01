@@ -9,7 +9,6 @@ import Foundation
 import Combine
 
 // MARK: - LoginViewState
-
 struct LoginViewState {
     var email: String = ""
     var password: String = ""

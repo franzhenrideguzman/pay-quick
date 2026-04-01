@@ -59,7 +59,6 @@ enum TransactionStatus: String, Equatable {
 }
 
 // MARK: - PaginatedTransactions
-
 struct PaginatedTransactions {
     let transactions: [Transaction]
     let currentPage: Int

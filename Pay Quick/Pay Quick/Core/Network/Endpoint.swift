@@ -8,14 +8,12 @@
 import Foundation
 
 // MARK: - HTTPMethod
-
 enum HTTPMethod: String {
     case get  = "GET"
     case post = "POST"
 }
 
 // MARK: - Endpoint Protocol
-
 protocol Endpoint {
     var baseURL: URL { get }
     var path: String { get }
@@ -56,11 +54,9 @@ extension Endpoint {
 }
 
 // MARK: - PayQuick API Endpoints
-
 private let kbaseURL = URL(string: "http://localhost:3000")!
 
 enum PayQuickEndpoint {
-
     struct Login: Endpoint {
         struct Body: Encodable {
             let email: String
