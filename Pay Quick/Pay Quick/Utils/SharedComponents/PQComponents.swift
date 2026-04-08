@@ -9,7 +9,6 @@ import Foundation
 import SwiftUI
 
 // MARK: - PQButton
-
 struct PQButton: View {
     let title: String
     var style: PQButtonStyle = .primary
@@ -62,7 +61,6 @@ struct PQButton: View {
 }
 
 // MARK: - PQButtonStyle
-
 enum PQButtonStyle {
     case primary
     case secondary
@@ -70,7 +68,6 @@ enum PQButtonStyle {
 }
 
 // MARK: - PQTextField
-
 struct PQTextField: View {
     let label: String
     var placeholder: String = ""

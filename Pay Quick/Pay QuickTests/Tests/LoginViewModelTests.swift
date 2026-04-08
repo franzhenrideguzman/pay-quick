@@ -12,24 +12,24 @@ import XCTest
 @MainActor
 final class LoginViewModelTests: XCTestCase {
 
-    var sut: LoginViewModel!          // sut = System Under Test
-    var mockRepository: MockAuthRepository!
+    var sut: LoginViewModel!
+    var mockUseCase: MockLoginUseCase!
     var mockKeychain: MockKeychainService!
     var appSession: AppSession!
 
     override func setUp() {
         super.setUp()
-        mockRepository = MockAuthRepository()
-        mockKeychain   = MockKeychainService()
-        appSession     = AppSession(keychain: mockKeychain)
-        sut            = LoginViewModel(authRepository: mockRepository, appSession: appSession)
+        mockUseCase  = MockLoginUseCase()
+        mockKeychain = MockKeychainService()
+        appSession   = AppSession(keychain: mockKeychain)
+        sut          = LoginViewModel(loginUseCase: mockUseCase, appSession: appSession)
     }
 
     override func tearDown() {
-        sut            = nil
-        mockRepository = nil
-        mockKeychain   = nil
-        appSession     = nil
+        sut          = nil
+        mockUseCase  = nil
+        mockKeychain = nil
+        appSession   = nil
         super.tearDown()
     }
 
@@ -73,8 +73,6 @@ final class LoginViewModelTests: XCTestCase {
         sut.viewState.password = "pass123"
 
         sut.loginTapped()
-
-        // Wait for async Task inside loginTapped to complete
         try await Task.sleep(nanoseconds: 100_000_000)
 
         XCTAssertTrue(appSession.isAuthenticated)
@@ -95,21 +93,21 @@ final class LoginViewModelTests: XCTestCase {
         XCTAssertEqual(mockKeychain.load(.accessToken), "mock_access_token")
     }
 
-    func test_loginTapped_callsRepository_once() async throws {
+    func test_loginTapped_callsUseCase_once() async throws {
         sut.viewState.email    = "smith@example.com"
         sut.viewState.password = "pass123"
 
         sut.loginTapped()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(mockRepository.loginCallCount, 1)
+        XCTAssertEqual(mockUseCase.executeCallCount, 1)
     }
 
     // MARK: - Login Failure
 
     func test_loginTapped_failure_setsErrorMessage() async throws {
-        mockRepository.shouldFail  = true
-        mockRepository.errorToThrow = NetworkError.serverError(statusCode: 401, message: "Invalid credentials")
+        mockUseCase.shouldFail   = true
+        mockUseCase.errorToThrow = NetworkError.serverError(statusCode: 401, message: "Invalid credentials")
 
         sut.viewState.email    = "wrong@example.com"
         sut.viewState.password = "wrongpass"
@@ -123,7 +121,7 @@ final class LoginViewModelTests: XCTestCase {
     }
 
     func test_loginTapped_failure_doesNotSaveTokens() async throws {
-        mockRepository.shouldFail = true
+        mockUseCase.shouldFail = true
 
         sut.viewState.email    = "wrong@example.com"
         sut.viewState.password = "wrongpass"
@@ -136,8 +134,8 @@ final class LoginViewModelTests: XCTestCase {
     }
 
     func test_loginTapped_noInternet_setsErrorMessage() async throws {
-        mockRepository.shouldFail   = true
-        mockRepository.errorToThrow = NetworkError.noInternetConnection
+        mockUseCase.shouldFail   = true
+        mockUseCase.errorToThrow = NetworkError.noInternetConnection
 
         sut.viewState.email    = "smith@example.com"
         sut.viewState.password = "pass123"
@@ -145,10 +143,13 @@ final class LoginViewModelTests: XCTestCase {
         sut.loginTapped()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(sut.viewState.errorMessage, "No internet connection. Please check your network.")
+        XCTAssertEqual(
+            sut.viewState.errorMessage,
+            "No internet connection. Please check your network."
+        )
     }
 
-    // MARK: - Guard: canSubmit
+    // MARK: - Guard
 
     func test_loginTapped_doesNothing_whenCanSubmitIsFalse() async throws {
         sut.viewState.email    = ""
@@ -157,6 +158,6 @@ final class LoginViewModelTests: XCTestCase {
         sut.loginTapped()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(mockRepository.loginCallCount, 0)
+        XCTAssertEqual(mockUseCase.executeCallCount, 0)
     }
 }

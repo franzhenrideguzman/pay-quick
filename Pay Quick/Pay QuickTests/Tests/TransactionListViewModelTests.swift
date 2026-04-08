@@ -13,26 +13,26 @@ import XCTest
 final class TransactionListViewModelTests: XCTestCase {
 
     var sut: TransactionListViewModel!
-    var mockRepository: MockTransactionRepository!
+    var mockUseCase: MockFetchTransactionsUseCase!
     var mockKeychain: MockKeychainService!
     var appSession: AppSession!
 
     override func setUp() {
         super.setUp()
-        mockRepository = MockTransactionRepository()
-        mockKeychain   = MockKeychainService()
-        appSession     = AppSession(keychain: mockKeychain)
-        sut            = TransactionListViewModel(
-            transactionRepository: mockRepository,
+        mockUseCase  = MockFetchTransactionsUseCase()
+        mockKeychain = MockKeychainService()
+        appSession   = AppSession(keychain: mockKeychain)
+        sut          = TransactionListViewModel(
+            fetchTransactionsUseCase: mockUseCase,
             appSession: appSession
         )
     }
 
     override func tearDown() {
-        sut            = nil
-        mockRepository = nil
-        mockKeychain   = nil
-        appSession     = nil
+        sut          = nil
+        mockUseCase  = nil
+        mockKeychain = nil
+        appSession   = nil
         super.tearDown()
     }
 
@@ -51,7 +51,7 @@ final class TransactionListViewModelTests: XCTestCase {
         sut.onAppear()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(mockRepository.fetchCallCount, 1)
+        XCTAssertEqual(mockUseCase.executeCallCount, 1)
         XCTAssertFalse(sut.viewState.sections.isEmpty)
     }
 
@@ -62,7 +62,7 @@ final class TransactionListViewModelTests: XCTestCase {
         sut.onAppear()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(mockRepository.fetchCallCount, 1)
+        XCTAssertEqual(mockUseCase.executeCallCount, 1)
     }
 
     func test_loadFirstPage_setsCorrectPageState() async throws {
@@ -80,7 +80,6 @@ final class TransactionListViewModelTests: XCTestCase {
         sut.onAppear()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        // Page 1 has Oct 2025 and Sep 2025 — should be 2 sections
         XCTAssertEqual(sut.viewState.sections.count, 2)
     }
 
@@ -91,14 +90,12 @@ final class TransactionListViewModelTests: XCTestCase {
         let firstSectionTitle  = sut.viewState.sections.first?.title ?? ""
         let secondSectionTitle = sut.viewState.sections.last?.title ?? ""
 
-        // October should come before September
         XCTAssertTrue(firstSectionTitle.contains("2025"))
         XCTAssertNotEqual(firstSectionTitle, secondSectionTitle)
     }
 
     func test_transactionsWithinSection_areOrderedNewestFirst() async throws {
-        // Add two transactions in the same month
-        mockRepository.stubbedPages[1] = PaginatedTransactions(
+        mockUseCase.stubbedPages[1] = PaginatedTransactions(
             transactions: [
                 Transaction(id: "a", amountInCents: 1000, currency: "USD", type: .transfer,
                            status: .success, createdAt: Date.make(year: 2025, month: 10, day: 1),
@@ -114,7 +111,6 @@ final class TransactionListViewModelTests: XCTestCase {
         try await Task.sleep(nanoseconds: 100_000_000)
 
         let firstTransaction = sut.viewState.sections.first?.transactions.first
-        // Oct 9 should appear before Oct 1
         XCTAssertEqual(firstTransaction?.id, "b")
     }
 
@@ -127,7 +123,7 @@ final class TransactionListViewModelTests: XCTestCase {
         sut.onLastRowAppeared()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        XCTAssertEqual(mockRepository.fetchCallCount, 2)
+        XCTAssertEqual(mockUseCase.executeCallCount, 2)
         XCTAssertEqual(sut.viewState.currentPage, 2)
     }
 
@@ -139,12 +135,11 @@ final class TransactionListViewModelTests: XCTestCase {
         sut.onLastRowAppeared()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        // Page 2 adds Aug and Jul — total sections should increase
         XCTAssertGreaterThan(sut.viewState.sections.count, sectionsAfterPage1)
     }
 
     func test_onLastRowAppeared_doesNotLoad_whenNoNextPage() async throws {
-        mockRepository.stubbedPages[1] = PaginatedTransactions(
+        mockUseCase.stubbedPages[1] = PaginatedTransactions(
             transactions: [
                 Transaction(id: "1", amountInCents: 5000, currency: "USD", type: .transfer,
                            status: .success, createdAt: Date.october2025, destinationId: "wal_001")
@@ -158,15 +153,14 @@ final class TransactionListViewModelTests: XCTestCase {
         sut.onLastRowAppeared()
         try await Task.sleep(nanoseconds: 100_000_000)
 
-        // Should still be 1 — no next page to load
-        XCTAssertEqual(mockRepository.fetchCallCount, 1)
+        XCTAssertEqual(mockUseCase.executeCallCount, 1)
     }
 
     // MARK: - Error Handling
 
     func test_loadFirstPage_failure_setsErrorMessage() async throws {
-        mockRepository.shouldFail   = true
-        mockRepository.errorToThrow = NetworkError.noInternetConnection
+        mockUseCase.shouldFail   = true
+        mockUseCase.errorToThrow = NetworkError.noInternetConnection
 
         sut.onAppear()
         try await Task.sleep(nanoseconds: 100_000_000)
@@ -177,8 +171,8 @@ final class TransactionListViewModelTests: XCTestCase {
     }
 
     func test_loadFirstPage_failure_setsCorrectErrorMessage() async throws {
-        mockRepository.shouldFail   = true
-        mockRepository.errorToThrow = NetworkError.noInternetConnection
+        mockUseCase.shouldFail   = true
+        mockUseCase.errorToThrow = NetworkError.noInternetConnection
 
         sut.onAppear()
         try await Task.sleep(nanoseconds: 100_000_000)
@@ -192,7 +186,6 @@ final class TransactionListViewModelTests: XCTestCase {
     // MARK: - Logout
 
     func test_logoutTapped_clearsSession() {
-        // Simulate logged in state
         try? mockKeychain.save("token", for: .accessToken)
         appSession.signIn(
             user: User(id: "1", fullName: "Paul", email: "smith@example.com"),

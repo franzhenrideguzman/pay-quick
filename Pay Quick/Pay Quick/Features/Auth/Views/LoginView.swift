@@ -147,16 +147,14 @@ struct LoginView: View {
     let keychain = KeychainService()
     let session  = AppSession(keychain: keychain)
     let vm       = LoginViewModel(
-        authRepository: MockAuthRepository(),
+        loginUseCase: MockLoginUseCase(),
         appSession: session
     )
     return LoginView(viewModel: vm)
 }
 
-// MARK: - Mock for Preview
-
-private class MockAuthRepository: AuthRepositoryProtocol {
-    func login(email: String, password: String) async throws -> (user: User, accessToken: String, refreshToken: String) {
+private class MockLoginUseCase: LoginUseCaseProtocol {
+    func execute(email: String, password: String) async throws -> (user: User, accessToken: String, refreshToken: String) {
         return (
             User(id: "1", fullName: "Paul Smith", email: "smith@example.com"),
             "mock_access_token",

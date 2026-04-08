@@ -227,16 +227,14 @@ struct TransactionListView: View {
     let keychain = KeychainService()
     let session  = AppSession(keychain: keychain)
     let vm       = TransactionListViewModel(
-        transactionRepository: MockTransactionRepository(),
+        fetchTransactionsUseCase: MockFetchTransactionsUseCase(),
         appSession: session
     )
     return TransactionListView(viewModel: vm)
 }
 
-// MARK: - Mock for Preview
-
-private class MockTransactionRepository: TransactionRepositoryProtocol {
-    func fetchTransactions(page: Int) async throws -> PaginatedTransactions {
+private class MockFetchTransactionsUseCase: FetchTransactionsUseCaseProtocol {
+    func execute(page: Int) async throws -> PaginatedTransactions {
         PaginatedTransactions(
             transactions: [
                 Transaction(
@@ -246,7 +244,7 @@ private class MockTransactionRepository: TransactionRepositoryProtocol {
                     type: .transfer,
                     status: .success,
                     createdAt: Date(),
-                    destinationId: "wal_20251009-TRF5"
+                    destinationId: "wal_001"
                 ),
                 Transaction(
                     id: "2",
@@ -255,7 +253,7 @@ private class MockTransactionRepository: TransactionRepositoryProtocol {
                     type: .topUp,
                     status: .success,
                     createdAt: Date().addingTimeInterval(-86400),
-                    destinationId: "wal_20251009-001TP"
+                    destinationId: "wal_002"
                 )
             ],
             currentPage: 1,

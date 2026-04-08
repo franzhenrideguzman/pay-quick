@@ -9,6 +9,7 @@ import Foundation
 import Combine
 
 // MARK: - LoginViewState
+
 struct LoginViewState {
     var email: String = ""
     var password: String = ""
@@ -29,13 +30,13 @@ final class LoginViewModel: ObservableObject {
     @Published var viewState = LoginViewState()
 
     // MARK: - Dependencies
-    private let authRepository: AuthRepositoryProtocol
+    private let loginUseCase: LoginUseCaseProtocol
     private let appSession: AppSession
 
     // MARK: - Init
-    init(authRepository: AuthRepositoryProtocol, appSession: AppSession) {
-        self.authRepository = authRepository
-        self.appSession = appSession
+    init(loginUseCase: LoginUseCaseProtocol, appSession: AppSession) {
+        self.loginUseCase = loginUseCase
+        self.appSession   = appSession
     }
 
     // MARK: - Intent
@@ -43,13 +44,13 @@ final class LoginViewModel: ObservableObject {
     func loginTapped() {
         guard viewState.canSubmit else { return }
 
-        viewState.isLoading = true
+        viewState.isLoading    = true
         viewState.errorMessage = nil
 
         Task {
             do {
-                let (user, accessToken, refreshToken) = try await authRepository.login(
-                    email: viewState.email.trimmingCharacters(in: .whitespacesAndNewlines),
+                let (user, accessToken, refreshToken) = try await loginUseCase.execute(
+                    email: viewState.email,
                     password: viewState.password
                 )
                 appSession.signIn(
@@ -67,6 +68,9 @@ final class LoginViewModel: ObservableObject {
     // MARK: - Private
 
     private func friendlyMessage(for error: Error) -> String {
-        (error as? NetworkError)?.errorDescription ?? error.localizedDescription
+        if let validationError = error as? ValidationError {
+            return validationError.errorDescription ?? "Invalid input."
+        }
+        return (error as? NetworkError)?.errorDescription ?? error.localizedDescription
     }
 }

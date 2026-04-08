@@ -9,6 +9,7 @@ import Foundation
 import Combine
 
 // MARK: - TransactionSection
+
 struct TransactionSection: Identifiable {
     let id: String
     let title: String
@@ -16,6 +17,7 @@ struct TransactionSection: Identifiable {
 }
 
 // MARK: - TransactionListViewState
+
 struct TransactionListViewState {
     var sections: [TransactionSection] = []
     var isLoadingFirstPage: Bool = false
@@ -29,6 +31,7 @@ struct TransactionListViewState {
 }
 
 // MARK: - TransactionListViewModel
+
 @MainActor
 final class TransactionListViewModel: ObservableObject {
 
@@ -36,7 +39,7 @@ final class TransactionListViewModel: ObservableObject {
     @Published private(set) var viewState = TransactionListViewState()
 
     // MARK: - Dependencies
-    private let transactionRepository: TransactionRepositoryProtocol
+    private let fetchTransactionsUseCase: FetchTransactionsUseCaseProtocol
     private let appSession: AppSession
 
     // MARK: - Private State
@@ -44,12 +47,13 @@ final class TransactionListViewModel: ObservableObject {
     private var isFetching = false
 
     // MARK: - Init
-    init(transactionRepository: TransactionRepositoryProtocol, appSession: AppSession) {
-        self.transactionRepository = transactionRepository
-        self.appSession = appSession
+    init(fetchTransactionsUseCase: FetchTransactionsUseCaseProtocol, appSession: AppSession) {
+        self.fetchTransactionsUseCase = fetchTransactionsUseCase
+        self.appSession               = appSession
     }
 
     // MARK: - Intents
+
     func onAppear() {
         guard allTransactions.isEmpty else { return }
         loadFirstPage()
@@ -57,12 +61,11 @@ final class TransactionListViewModel: ObservableObject {
 
     func loadFirstPage() {
         allTransactions = []
-        viewState = TransactionListViewState()
+        viewState       = TransactionListViewState()
         viewState.isLoadingFirstPage = true
         fetchPage(1)
     }
 
-    /// Called when last row appears — triggers next page (infinite scroll)
     func onLastRowAppeared() {
         guard viewState.hasNextPage, !isFetching else { return }
         viewState.isLoadingNextPage = true
@@ -83,11 +86,11 @@ final class TransactionListViewModel: ObservableObject {
             defer {
                 isFetching = false
                 viewState.isLoadingFirstPage = false
-                viewState.isLoadingNextPage = false
+                viewState.isLoadingNextPage  = false
             }
 
             do {
-                let result = try await transactionRepository.fetchTransactions(page: page)
+                let result = try await fetchTransactionsUseCase.execute(page: page)
 
                 allTransactions.append(contentsOf: result.transactions)
                 viewState.currentPage  = result.currentPage
@@ -101,7 +104,6 @@ final class TransactionListViewModel: ObservableObject {
         }
     }
 
-    /// Groups transactions into monthly sections, newest first
     private func buildSections(from transactions: [Transaction]) -> [TransactionSection] {
         var grouped: [String: [Transaction]] = [:]
 
